@@ -58,7 +58,7 @@ export default class Spark {
         console.info(`Spark started on port: ${this.port}`)
     }
     
-    message(type: string, handler: any) {
+    on(type: string, handler: any) {
         this.handlers[type] = handler;
     }
 }
