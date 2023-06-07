@@ -23,9 +23,23 @@ export default class Spark {
     private handlers: any = {};
     private port = 3000
     private descriptor: Descriptor;
+    private clientId: string;
+    private clientSecret: string;
+
+    // TODO - the the SDK will receive messages from the server and must validate that the requests are valid based on the signature in the header
+    
+    // 1) The client must call an API on the server to retrieve the signing secret - using the clientId and clientSecret
+    // 2) Extract the timestamp and signatures from the header
+    // 3) Prepare the signed_payload string
+    // 4) Determine the expected signature
+    // 5) Compare the signatures
+
+    // https://stripe.com/docs/webhooks/signatures#compare-signatures
 
     constructor(descriptor: any, clientId: string, clientSecret: string) {
         this.descriptor = descriptor
+        this.clientId = clientId
+        this.clientSecret = clientSecret
     }
 
     start() {
@@ -36,6 +50,7 @@ export default class Spark {
         }));
 
         this.app.use(route.post('/events', async (ctx: any) => {
+            // TODO: Validate Signature
             ctx.body = await this.handlers[ctx.request.body.type](ctx.request.body);
         }));
 
