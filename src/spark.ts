@@ -1,17 +1,24 @@
 import Koa  from 'koa';
 import route from 'koa-route';
+import bodyParser from 'koa-bodyparser';
 import path from 'path';
 
 export default class Spark {
     private app = new Koa();
     private handlers: any = {};
     private port = 3000
-    constructor(descriptor: any) {
+    constructor(private descriptor: any) {
         
     }
     start() {
-        this.app.use(route.post('/events', (ctx) => {
-            ctx.body = 'Hello World';
+        this.app.use(bodyParser());
+
+        this.app.use(route.get('/plugin.json', (ctx) => {
+            ctx.body = this.descriptor;
+        }));
+
+        this.app.use(route.post('/events', async (ctx: any) => {
+            ctx.body = await this.handlers[ctx.request.body.type];
         }));
 
         // TODO: serve the plugin.json somehow
