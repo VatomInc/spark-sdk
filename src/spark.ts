@@ -29,7 +29,7 @@ export default class Spark {
     // TODO - the the SDK will receive messages from the server and must validate that the requests are valid based on the signature in the header
     
     // 1) The client must call an API on the server to retrieve the signing secret - using the clientId and clientSecret
-    // 2) Extract the timestamp and signatures from the header
+    // 2) Extract the timestamp and signatures from the header (Vatom-Signature)
     // 3) Prepare the signed_payload string
     // 4) Determine the expected signature
     // 5) Compare the signatures
