@@ -1,15 +1,33 @@
 import Koa  from 'koa';
 import route from 'koa-route';
 import bodyParser from 'koa-bodyparser';
-import path from 'path';
+
+type Facade = {
+    id: string,
+    types?: string[],
+    events?: string[]
+}
+
+type Control = {
+    id: string
+}
+
+type Descriptor = {
+    plugin_id: string,
+    facades: Facade[],
+    controls: Control[]
+}
 
 export default class Spark {
     private app = new Koa();
     private handlers: any = {};
     private port = 3000
-    constructor(private descriptor: any) {
-        
+    private descriptor: Descriptor;
+
+    constructor(descriptor: any, clientId: string, clientSecret: string) {
+        this.descriptor = descriptor
     }
+
     start() {
         this.app.use(bodyParser());
 
@@ -20,9 +38,6 @@ export default class Spark {
         this.app.use(route.post('/events', async (ctx: any) => {
             ctx.body = await this.handlers[ctx.request.body.type](ctx.request.body);
         }));
-
-        // TODO: serve the plugin.json somehow
-        // this.app.use(serve(path.join(__dirname, 'public')));
 
         this.app.listen(this.port);
         console.info(`Spark started on port: ${this.port}`)
