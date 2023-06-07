@@ -18,7 +18,7 @@ export default class Spark {
         }));
 
         this.app.use(route.post('/events', async (ctx: any) => {
-            ctx.body = await this.handlers[ctx.request.body.type];
+            ctx.body = await this.handlers[ctx.request.body.type](ctx.request.body);
         }));
 
         // TODO: serve the plugin.json somehow
