@@ -1,64 +1,79 @@
-import Koa  from 'koa';
-import route from 'koa-route';
-import bodyParser from 'koa-bodyparser';
+import Koa from 'koa'
+import route from 'koa-route'
+import bodyParser from 'koa-bodyparser'
 
-type Facade = {
-    id: string,
-    types?: string[],
-    events?: string[]
+type Facade<EventMap extends Record<string, any>> = {
+  id: string
+  types?: Array<keyof EventMap>
+  events?: string[]
 }
 
 type Control = {
-    id: string
+  id: string
 }
 
-type Descriptor = {
-    plugin_id: string,
-    facades: Facade[],
-    controls: Control[]
+type Descriptor<EventMap extends Record<string, any>> = {
+  plugin_id: string
+  facades: Facade<EventMap>[]
+  controls: Control[]
 }
 
-export default class Spark {
-    private app = new Koa();
-    private handlers: any = {};
-    private port = 3000
-    private descriptor: Descriptor;
-    private clientId: string;
-    private clientSecret: string;
+type EventHandler<T extends Array<any>> = (payload: T) => Promise<void> | void
 
-    // TODO - the the SDK will receive messages from the server and must validate that the requests are valid based on the signature in the header
-    
-    // 1) The client must call an API on the server to retrieve the signing secret - using the clientId and clientSecret
-    // 2) Extract the timestamp and signatures from the header (Vatom-Signature)
-    // 3) Prepare the signed_payload string
-    // 4) Determine the expected signature
-    // 5) Compare the signatures
+export default class Spark<EventMap extends Record<string, any>> {
+  private app = new Koa()
+  private handlers: {
+    [K in keyof EventMap]?: EventHandler<EventMap[K]>
+  } = {}
 
-    // https://stripe.com/docs/webhooks/signatures#compare-signatures
+  private port = 3000
+  private descriptor: Descriptor<EventMap>
+  private clientId: string
+  private clientSecret: string
 
-    constructor(descriptor: any, clientId: string, clientSecret: string) {
-        this.descriptor = descriptor
-        this.clientId = clientId
-        this.clientSecret = clientSecret
-    }
+  // TODO - the the SDK will receive messages from the server and must validate that the requests are valid based on the signature in the header
 
-    start() {
-        this.app.use(bodyParser());
+  // 1) The client must call an API on the server to retrieve the signing secret - using the clientId and clientSecret
+  // 2) Extract the timestamp and signatures from the header (Vatom-Signature)
+  // 3) Prepare the signed_payload string
+  // 4) Determine the expected signature
+  // 5) Compare the signatures
 
-        this.app.use(route.get('/plugin.json', (ctx) => {
-            ctx.body = this.descriptor;
-        }));
+  // https://stripe.com/docs/webhooks/signatures#compare-signatures
 
-        this.app.use(route.post('/events', async (ctx: any) => {
-            // TODO: Validate Signature
-            ctx.body = await this.handlers[ctx.request.body.type](ctx.request.body);
-        }));
+  constructor(descriptor: Descriptor<EventMap>, clientId: string, clientSecret: string) {
+    this.descriptor = descriptor
+    this.clientId = clientId
+    this.clientSecret = clientSecret
+  }
 
-        this.app.listen(this.port);
-        console.info(`Spark started on port: ${this.port}`)
-    }
-    
-    on(type: string, handler: any) {
-        this.handlers[type] = handler;
-    }
+  start() {
+    this.app.use(bodyParser())
+
+    this.app.use(
+      route.get('/plugin.json', ctx => {
+        ctx.body = this.descriptor
+      })
+    )
+
+    this.app.use(
+      route.post('/events', async ctx => {
+        // TODO: Validate Signature
+        const body = ctx.request.body
+        const type = (body as any).type
+        const handler = this.handlers[type]
+
+        if (handler) {
+          ctx.body = await handler(ctx.request.body as any)
+        }
+      })
+    )
+
+    this.app.listen(this.port)
+    console.info(`Spark started on port: ${this.port}`)
+  }
+
+  on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>) {
+    this.handlers[type] = handler
+  }
 }
