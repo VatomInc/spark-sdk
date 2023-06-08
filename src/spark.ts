@@ -17,19 +17,23 @@ type Descriptor = {
   facades: Facade[];
   controls: Control[];
 };
-
-type EventHandler<T extends Array<any>> = (payload: T) => void;
+// promise
+type EventHandler<T extends Array<any>> = (payload: T) => Promise<void> | void;
 
 export default class Spark<EventMap extends Record<string, any>> {
   private app = new Koa();
   private handlers: {
-    [K in keyof EventMap]?: Set<EventHandler<EventMap[K]>>;
+    [K in keyof EventMap]?: EventHandler<EventMap[K]>;
   } = {};
 
   private port = 3000;
   private descriptor: Descriptor;
   private clientId: string;
   private clientSecret: string;
+
+  hasHandler(evenType: any): evenType is keyof typeof this.handlers {
+    return !!this.handlers[evenType];
+  }
 
   // TODO - the the SDK will receive messages from the server and must validate that the requests are valid based on the signature in the header
 
@@ -58,18 +62,13 @@ export default class Spark<EventMap extends Record<string, any>> {
 
     this.app.use(
       route.post("/events", async (ctx) => {
-        // ctx.body = await handlers[ctx.request.body.type](ctx.request.body);
         // TODO: Validate Signature
-        // ctx.body = await this.handlers.get(ctx.request.body.type)(ctx.request.body);
-        // @ts-expect-error we need to to a similar thing to koa-route to get the type of the body once we add signature validation
-        const type = ctx.request.body?.type as keyof EventMap;
-        // needs review
-        const payload = ctx.request.body as EventMap[typeof type];
-        const handlers = this.handlers[type];
-        if (handlers) {
-          for (const handler of handlers) {
-            handler(payload);
-          }
+        const body = ctx.request.body;
+        const type = (body as any).type;
+        const handler = this.handlers[type];
+
+        if (handler) {
+          ctx.body = await handler(ctx.request.body as any);
         }
       })
     );
@@ -79,8 +78,6 @@ export default class Spark<EventMap extends Record<string, any>> {
   }
 
   on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>) {
-    const handlers = this.handlers[type] || new Set();
-    handlers.add(handler);
-    this.handlers[type] = handlers;
+    this.handlers[type] = handler;
   }
 }
