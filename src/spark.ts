@@ -2,9 +2,9 @@ import Koa from 'koa'
 import route from 'koa-route'
 import bodyParser from 'koa-bodyparser'
 
-type Facade = {
+type Facade<EventMap extends Record<string, any>> = {
   id: string
-  types?: string[]
+  types?: Array<keyof EventMap>
   events?: string[]
 }
 
@@ -12,9 +12,9 @@ type Control = {
   id: string
 }
 
-type Descriptor = {
+type Descriptor<EventMap extends Record<string, any>> = {
   plugin_id: string
-  facades: Facade[]
+  facades: Facade<EventMap>[]
   controls: Control[]
 }
 
@@ -27,7 +27,7 @@ export default class Spark<EventMap extends Record<string, any>> {
   } = {}
 
   private port = 3000
-  private descriptor: Descriptor
+  private descriptor: Descriptor<EventMap>
   private clientId: string
   private clientSecret: string
 
@@ -41,7 +41,7 @@ export default class Spark<EventMap extends Record<string, any>> {
 
   // https://stripe.com/docs/webhooks/signatures#compare-signatures
 
-  constructor(descriptor: any, clientId: string, clientSecret: string) {
+  constructor(descriptor: Descriptor<EventMap>, clientId: string, clientSecret: string) {
     this.descriptor = descriptor
     this.clientId = clientId
     this.clientSecret = clientSecret
