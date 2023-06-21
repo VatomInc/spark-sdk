@@ -6,7 +6,7 @@
 version: 2
 defaults: &defaults
   docker:
-    - image: circleci/node:8.9.3
+    - image: circleci/node:16
   working_directory: ~/spark-sdk
 jobs:
   build-spark-sdk:
@@ -52,5 +52,7 @@ workflows:
           requires:
             - build-spark-sdk
           filters:
+            tags:
+              only: /^v.*/
             branches:
-              only: master
+              ignore: /.*/
