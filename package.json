@@ -1,5 +1,5 @@
 {
-    "name": "@vatom.com/spark-sdk",
+    "name": "@vatom/spark-sdk",
     "version": "1.0.0",
     "license": "MIT",
     "types": "./dist/index.js",
@@ -10,6 +10,7 @@
     ],
     "main": "./dist/index",
     "author": "Alistair Farquharson",
+    "scope": "public",
     "dependencies": {
         "koa": "^2.14.2",
         "koa-bodyparser": "^4.4.0",
