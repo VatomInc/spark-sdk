@@ -48,11 +48,17 @@ workflows:
   build-spark-sdk:
     jobs:
       - build-spark-sdk
+      # - publish-spark-sdk:
+      #     requires:
+      #       - build-spark-sdk
+      #     filters:
+      #       tags:
+      #         only: /^v.*/
+      #       branches:
+      #         ignore: /.*/
       - publish-spark-sdk:
           requires:
             - build-spark-sdk
           filters:
-            tags:
-              only: /^v.*/
             branches:
-              ignore: /.*/
+              only: main
