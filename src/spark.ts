@@ -2,6 +2,8 @@ import Koa from 'koa'
 import route from 'koa-route'
 import bodyParser from 'koa-bodyparser'
 
+const crypto = require("crypto").webcrypto;
+
 type Facade<EventMap extends Record<string, any>> = {
   id: string
   types?: Array<keyof EventMap>
@@ -20,6 +22,29 @@ type Descriptor<EventMap extends Record<string, any>> = {
 
 type EventHandler<T extends Array<any>> = (payload: T) => Promise<void> | void
 
+async function verifyVatomSignature(bodyString: string, signature: string, secret: string) {
+  const alg = { name: "HMAC", hash: "SHA-256" }
+
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    alg,
+    false, // not exportable
+    ["verify"],
+  )
+
+  const signatureBuffer = new Uint8Array(Buffer.from(signature, "base64"))
+
+  const valid = await crypto.subtle.verify(
+    alg,
+    key,
+    signatureBuffer,
+    new TextEncoder().encode(bodyString),
+  )
+
+  if (!valid) throw new Error("signature invalid")
+}
+
 export default class Spark<EventMap extends Record<string, any>> {
   private app = new Koa()
   private handlers: {
@@ -30,16 +55,6 @@ export default class Spark<EventMap extends Record<string, any>> {
   private descriptor: Descriptor<EventMap>
   private clientId: string
   private clientSecret: string
-
-  // TODO - the the SDK will receive messages from the server and must validate that the requests are valid based on the signature in the header
-
-  // 1) The client must call an API on the server to retrieve the signing secret - using the clientId and clientSecret
-  // 2) Extract the timestamp and signatures from the header (Vatom-Signature)
-  // 3) Prepare the signed_payload string
-  // 4) Determine the expected signature
-  // 5) Compare the signatures
-
-  // https://stripe.com/docs/webhooks/signatures#compare-signatures
 
   constructor(descriptor: Descriptor<EventMap>, clientId: string, clientSecret: string) {
     this.descriptor = descriptor
@@ -58,7 +73,20 @@ export default class Spark<EventMap extends Record<string, any>> {
 
     this.app.use(
       route.post('/events', async ctx => {
-        // TODO: Validate Signature
+        const bodyString = ctx.request.rawBody
+        const signature = ctx.get("x-signature-sha256")
+
+        try {
+          await verifyVatomSignature(bodyString, signature, this.clientSecret)
+        } catch (e) {
+          if (e instanceof Error && e.message === "signature invalid") {
+            ctx.status = 401
+            ctx.body = { error: "signature invalid" }
+          } else {
+            throw e
+          }
+        }
+
         const body = ctx.request.body
         const type = (body as any).type
         const handler = this.handlers[type]
