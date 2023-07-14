@@ -6,7 +6,7 @@ const crypto = require("crypto").webcrypto;
 
 type Facade<EventMap extends Record<string, any>> = {
   id: string
-  types?: Array<keyof EventMap>
+  types?: Array<{ id: keyof EventMap, actions: string[] }>
   events?: string[]
 }
 
