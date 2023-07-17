@@ -22,7 +22,7 @@ type Descriptor<EventMap extends Record<string, any>> = {
 
 type EventHandler<T extends Array<any>> = (payload: T) => Promise<void> | void
 
-async function verifyVatomSignature(bodyString: string, signature: string, secret: string) {
+async function verifyVatomSignature(bodyString: string, signature: string, signatureTs: number, secret: string) {
   const alg = { name: "HMAC", hash: "SHA-256" }
 
   const key = await crypto.subtle.importKey(
@@ -39,10 +39,14 @@ async function verifyVatomSignature(bodyString: string, signature: string, secre
     alg,
     key,
     signatureBuffer,
-    new TextEncoder().encode(bodyString),
+    new TextEncoder().encode(signatureTs + ":" + bodyString),
   )
 
   if (!valid) throw new Error("signature invalid")
+
+  if (Date.now() - signatureTs > (600_000 /* 10 min in ms */)) {
+    throw new Error("signature timestamp expired")
+  }
 }
 
 export default class Spark<EventMap extends Record<string, any>> {
@@ -75,9 +79,10 @@ export default class Spark<EventMap extends Record<string, any>> {
       route.post('/events', async ctx => {
         const bodyString = ctx.request.rawBody
         const signature = ctx.get("x-signature-sha256")
+        const signatureTs = Number.parseInt(ctx.get("x-signature-timestamp"))
 
         try {
-          await verifyVatomSignature(bodyString, signature, this.signingSecret)
+          await verifyVatomSignature(bodyString, signature, signatureTs, this.signingSecret)
         } catch (e) {
           if (e instanceof Error && e.message === "signature invalid") {
             ctx.status = 401
