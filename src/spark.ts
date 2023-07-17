@@ -56,7 +56,7 @@ export default class Spark<EventMap extends Record<string, any>> {
   private clientId: string
   private clientSecret: string
 
-  constructor(descriptor: Descriptor<EventMap>, clientId: string, clientSecret: string) {
+  constructor(descriptor: Descriptor<EventMap>, clientId: string, clientSecret: string, private signingSecret: string) {
     this.descriptor = descriptor
     this.clientId = clientId
     this.clientSecret = clientSecret
@@ -77,7 +77,7 @@ export default class Spark<EventMap extends Record<string, any>> {
         const signature = ctx.get("x-signature-sha256")
 
         try {
-          await verifyVatomSignature(bodyString, signature, this.clientSecret)
+          await verifyVatomSignature(bodyString, signature, this.signingSecret)
         } catch (e) {
           if (e instanceof Error && e.message === "signature invalid") {
             ctx.status = 401
