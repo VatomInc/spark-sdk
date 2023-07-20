@@ -40,7 +40,7 @@ type Descriptor = {
   controls: Control[]
 }
 
-type EventHandler<T extends Array<any>> = (payload: T) => Promise<void> | void
+type EventHandler<T extends Array<any>> = (payload: T) => Promise<any> | any
 
 async function verifyVatomSignature(bodyString: string, signature: string, signatureTs: number, secret: string) {
   const alg = { name: "HMAC", hash: "SHA-256" }
@@ -126,7 +126,7 @@ export default class Spark<EventMap extends Record<string, any>> {
     console.info(`Spark started on port: ${this.port}`)
   }
 
-  on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>): any {
+  on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>) {
     this.handlers[type] = handler
   }
 }
