@@ -28,7 +28,7 @@ type Control = {
   id: string
 }
 
-type Descriptor<EventMap extends Record<string, any>> = {
+type Descriptor = {
   namespace: string
   plugin_id: string
   facades: {
@@ -76,11 +76,11 @@ export default class Spark<EventMap extends Record<string, any>> {
   } = {}
 
   private port = 3000
-  private descriptor: Descriptor<EventMap>
+  private descriptor: Descriptor
   private clientId: string
   private clientSecret: string
 
-  constructor(descriptor: Descriptor<EventMap>, clientId: string, clientSecret: string, private signingSecret: string) {
+  constructor(descriptor: Descriptor, clientId: string, clientSecret: string, private signingSecret: string) {
     this.descriptor = descriptor
     this.clientId = clientId
     this.clientSecret = clientSecret
@@ -126,7 +126,7 @@ export default class Spark<EventMap extends Record<string, any>> {
     console.info(`Spark started on port: ${this.port}`)
   }
 
-  on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>) {
+  on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>): any {
     this.handlers[type] = handler
   }
 }
