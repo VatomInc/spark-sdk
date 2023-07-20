@@ -4,10 +4,24 @@ import bodyParser from 'koa-bodyparser'
 
 const crypto = require("crypto").webcrypto;
 
-type Facade<EventMap extends Record<string, any>> = {
+type MessageFacade = {
   id: string
-  types?: Array<{ id: keyof EventMap, actions: string[] }>
-  events?: string[]
+  actions?: string[]
+}
+
+type ModalFacade = {
+  event: string
+  name: string
+  message_type: string
+}
+
+type BadgeFacade = {
+  id: string
+}
+
+type Filter = {
+  name: string
+  message_type: string
 }
 
 type Control = {
@@ -15,8 +29,14 @@ type Control = {
 }
 
 type Descriptor<EventMap extends Record<string, any>> = {
+  namespace: string
   plugin_id: string
-  facades: Facade<EventMap>[]
+  facades: {
+    message: MessageFacade[],
+    modal: ModalFacade[],
+    badge: BadgeFacade[]
+  }
+  filters: Filter[]
   controls: Control[]
 }
 

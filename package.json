@@ -1,6 +1,6 @@
 {
     "name": "@vatom/spark-sdk",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "license": "MIT",
     "types": "./dist/index.js",
     "files": [
