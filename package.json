@@ -1,6 +1,6 @@
 {
     "name": "@vatom/spark-sdk",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "license": "MIT",
     "types": "./dist/index.js",
     "files": [
@@ -12,10 +12,12 @@
     "author": "Alistair Farquharson",
     "scope": "public",
     "dependencies": {
+        "axios": "^1.4.0",
         "koa": "^2.14.2",
         "koa-bodyparser": "^4.4.0",
         "koa-route": "^3.2.0",
-        "koa-static": "^5.0.0"
+        "koa-static": "^5.0.0",
+        "node-cache": "^5.1.2"
     },
     "scripts": {
         "build": "rm -rf ./build && tsc",

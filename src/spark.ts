@@ -1,6 +1,8 @@
 import Koa from 'koa'
 import route from 'koa-route'
 import bodyParser from 'koa-bodyparser'
+import axios, { AxiosInstance } from 'axios';
+import NodeCache from 'node-cache';
 
 const crypto = require("crypto").webcrypto;
 
@@ -69,6 +71,36 @@ async function verifyVatomSignature(bodyString: string, signature: string, signa
   }
 }
 
+const {
+	OIDC_API_BASE,
+} = process.env
+
+const ax = axios.create({
+	baseURL: OIDC_API_BASE || "https://id.vatom.com"
+});
+
+const tokenCache = new NodeCache({ stdTTL: 500, checkperiod: 20 });
+async function getClientCredentialsToken(clientId: string, clientSecret: string, scope: string): Promise<any> {
+	
+	const cacheKey = `${clientId}.${clientSecret}.${scope}`;
+	let fromCache = tokenCache.get<any>(cacheKey);
+
+	if (fromCache) {
+		return fromCache;
+	}
+
+	const { data } = await ax.post("/token", new URLSearchParams({
+		grant_type: 'client_credentials',
+		client_id: clientId!,
+		scope,
+	}), {
+		auth: { username: clientId!, password: clientSecret! },
+	});
+
+	tokenCache.set(cacheKey, data);
+	return data;
+}
+
 export default class Spark<EventMap extends Record<string, any>> {
   private app = new Koa()
   private handlers: {
@@ -79,11 +111,16 @@ export default class Spark<EventMap extends Record<string, any>> {
   private descriptor: Descriptor
   private clientId: string
   private clientSecret: string
+  private ax: AxiosInstance
 
   constructor(descriptor: Descriptor, clientId: string, clientSecret: string, private signingSecret: string) {
     this.descriptor = descriptor
     this.clientId = clientId
     this.clientSecret = clientSecret
+
+    this.ax = axios.create({ 
+      baseURL: process.env.EVENTS_API_BASE
+    });
   }
 
   start() {
@@ -128,5 +165,25 @@ export default class Spark<EventMap extends Record<string, any>> {
 
   on<T extends keyof EventMap>(type: T, handler: EventHandler<EventMap[T]>) {
     this.handlers[type] = handler
+  }
+
+  async sendRoomEvent(roomId: string, eventType: string, data: any) {
+
+    const { access_token } = await getClientCredentialsToken('profile', this.clientId, this.clientSecret)
+    this.ax.post(`/_matrix/client/v3/rooms/${roomId}/send/${eventType}`, data, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      } 
+    })
+  }
+
+  async updateRoomState(roomId: string, eventType: string, stateKey: string, data: any) {
+    
+    const { access_token } = await getClientCredentialsToken('profile', this.clientId, this.clientSecret)
+    this.ax.put(`/_matrix/client/v3/rooms/${roomId}/state/${eventType}/${stateKey}`, data, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      } 
+    })
   }
 }
