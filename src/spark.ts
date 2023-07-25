@@ -172,7 +172,7 @@ export default class Spark<EventMap extends Record<string, any>> {
 
   async sendRoomEvent(roomId: string, eventType: string, data: any) {
 
-    const { access_token } = await getClientCredentialsToken('profile', this.clientId, this.clientSecret)
+    const { access_token } = await getClientCredentialsToken(this.clientId, this.clientSecret, 'profile')
     this.ax.post(`/_matrix/client/v3/rooms/${roomId}/send/${eventType}`, data, {
       headers: {
         Authorization: `Bearer ${access_token}`
@@ -182,7 +182,7 @@ export default class Spark<EventMap extends Record<string, any>> {
 
   async updateRoomState(roomId: string, eventType: string, stateKey: string, data: any) {
     
-    const { access_token } = await getClientCredentialsToken('profile', this.clientId, this.clientSecret)
+    const { access_token } = await getClientCredentialsToken(this.clientId, this.clientSecret, 'profile')
     this.ax.put(`/_matrix/client/v3/rooms/${roomId}/state/${eventType}/${stateKey}`, data, {
       headers: {
         Authorization: `Bearer ${access_token}`
