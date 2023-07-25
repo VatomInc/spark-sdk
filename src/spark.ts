@@ -44,7 +44,7 @@ type Descriptor = {
 
 type EventHandler<T extends Array<any>> = (payload: T) => Promise<any> | any
 
-async function verifyVatomSignature(bodyString: string, signature: string, signatureTs: number, secret: string) {
+async function verifyVatomSignature(bodyString: string, signature: string, signatureTs: number, secret?: string) {
 
   if (!secret) return
 
@@ -116,7 +116,7 @@ export default class Spark<EventMap extends Record<string, any>> {
   private clientSecret: string
   private ax: AxiosInstance
 
-  constructor(descriptor: Descriptor, clientId: string, clientSecret: string, private signingSecret: string) {
+  constructor(descriptor: Descriptor, clientId: string, clientSecret: string, private signingSecret?: string) {
     this.descriptor = descriptor
     this.clientId = clientId
     this.clientSecret = clientSecret
