@@ -45,6 +45,9 @@ type Descriptor = {
 type EventHandler<T extends Array<any>> = (payload: T) => Promise<any> | any
 
 async function verifyVatomSignature(bodyString: string, signature: string, signatureTs: number, secret: string) {
+
+  if (!secret) return
+
   const alg = { name: "HMAC", hash: "SHA-256" }
 
   const key = await crypto.subtle.importKey(
@@ -119,7 +122,7 @@ export default class Spark<EventMap extends Record<string, any>> {
     this.clientSecret = clientSecret
 
     this.ax = axios.create({ 
-      baseURL: process.env.EVENTS_API_BASE
+      baseURL: process.env.BUSINESSES_API_BASE || "https://businesses.api.vatominc.com"
     });
   }
 
