@@ -158,6 +158,8 @@ export default class Spark<EventMap extends Record<string, any>> {
 
         if (handler) {
           ctx.body = await handler(ctx.request.body as any)
+        } else {
+          ctx.status = 204
         }
       })
     )
