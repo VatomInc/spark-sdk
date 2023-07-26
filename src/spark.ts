@@ -191,4 +191,16 @@ export default class Spark<EventMap extends Record<string, any>> {
       } 
     })
   }
+
+  async getRoomEvent(roomId: string, eventId: string) {
+    
+    const { access_token } = await getClientCredentialsToken(this.clientId, this.clientSecret, 'profile')
+    const { data, status} = await this.ax.get(`/_matrix/client/v3/rooms/${roomId}/event/${eventId}`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      } 
+    })
+
+    return data
+  }
 }
