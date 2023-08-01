@@ -42,6 +42,20 @@ type Descriptor = {
   controls: Control[]
 }
 
+type RoomEventFilter = {
+  contains_url?: boolean,
+  include_redundant_members?: boolean,
+  lazy_load_members?: boolean,
+  limit?: number,
+  not_rooms?: string[],
+  not_senders?: string[],
+  not_types?: string[],
+  rooms?: string[],
+  senders?: string[],
+  types?: string[],
+  unread_thread_notifications?: boolean,
+}
+
 type EventHandler<T extends Array<any>> = (payload: T) => Promise<any> | any
 
 async function verifyVatomSignature(bodyString: string, signature: string, signatureTs: number, secret?: string) {
@@ -196,6 +210,19 @@ export default class Spark<EventMap extends Record<string, any>> {
     
     const { access_token } = await getClientCredentialsToken(this.clientId, this.clientSecret, 'profile')
     const { data, status} = await this.ax.get(`/_matrix/client/v3/rooms/${roomId}/event/${eventId}`, {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      } 
+    })
+
+    return data
+  }
+
+  async getRoomEvents(roomId: string, filter: RoomEventFilter) {
+    
+    const { access_token } = await getClientCredentialsToken(this.clientId, this.clientSecret, 'profile')
+    const filterString = encodeURIComponent(JSON.stringify(filter))
+    const { data, status} = await this.ax.get(`/_matrix/client/v3/rooms/${roomId}/messages?filter=${filterString}`, {
       headers: {
         Authorization: `Bearer ${access_token}`
       } 
